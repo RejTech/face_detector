@@ -4,6 +4,7 @@ const ctx = canvas.getContext('2d');
 const cameraSelect = document.getElementById('cameraSelect');
 const startBtn = document.getElementById('startBtn');
 const stopBtn = document.getElementById('stopBtn');
+const requestPermissionBtn = document.getElementById('requestPermissionBtn');
 const status = document.getElementById('status');
 const statusIndicator = document.getElementById('statusIndicator');
 const facesGrid = document.getElementById('facesGrid');
@@ -172,8 +173,14 @@ function findMatchingFace(descriptor) {
 
 async function getCameras() {
     try {
-        const devices = await navigator.mediaDevices.enumerateDevices();
-        const videoDevices = devices.filter(device => device.kind === 'videoinput');
+        let devices;
+        try {
+            devices = await navigator.mediaDevices.enumerateDevices();
+        } catch (e) {
+            console.error('enumerateDevices失败:', e);
+        }
+        
+        let videoDevices = devices ? devices.filter(device => device.kind === 'videoinput') : [];
         
         cameraSelect.innerHTML = '<option value="">选择摄像头</option>';
         videoDevices.forEach((device, index) => {
@@ -183,7 +190,6 @@ async function getCameras() {
             cameraSelect.appendChild(option);
         });
     } catch (error) {
-        status.textContent = '获取摄像头列表失败: ' + error.message;
         console.error('获取摄像头错误:', error);
     }
 }
@@ -202,6 +208,7 @@ async function startCamera(deviceId) {
             }
         };
         
+        status.textContent = '正在请求摄像头权限...';
         stream = await navigator.mediaDevices.getUserMedia(constraints);
         video.srcObject = stream;
         
@@ -214,10 +221,45 @@ async function startCamera(deviceId) {
             };
         });
         
+        await getCameras();
+        
         status.textContent = '摄像头已启动';
     } catch (error) {
-        status.textContent = '启动摄像头失败: ' + error.message;
+        let errorMsg = '启动摄像头失败: ';
+        if (error.name === 'NotAllowedError') {
+            errorMsg += '请允许访问摄像头权限';
+        } else if (error.name === 'NotFoundError') {
+            errorMsg += '未找到摄像头';
+        } else if (error.name === 'NotReadableError') {
+            errorMsg += '摄像头被其他程序占用';
+        } else {
+            errorMsg += error.message;
+        }
+        status.textContent = errorMsg;
         console.error('启动摄像头错误:', error);
+    }
+}
+
+async function requestCameraPermission() {
+    try {
+        status.textContent = '正在请求摄像头权限...';
+        
+        const tempStream = await navigator.mediaDevices.getUserMedia({ video: true });
+        tempStream.getTracks().forEach(track => track.stop());
+        
+        await getCameras();
+        
+        status.textContent = '摄像头权限已获得，请选择摄像头';
+        requestPermissionBtn.disabled = true;
+    } catch (error) {
+        let errorMsg = '请求权限失败: ';
+        if (error.name === 'NotAllowedError') {
+            errorMsg += '请允许访问摄像头权限';
+        } else {
+            errorMsg += error.message;
+        }
+        status.textContent = errorMsg;
+        console.error('请求权限错误:', error);
     }
 }
 
@@ -427,10 +469,12 @@ function stopDetection() {
     startBtn.disabled = false;
     stopBtn.disabled = true;
     cameraSelect.disabled = false;
+    requestPermissionBtn.disabled = false;
     
     status.textContent = '检测已停止';
 }
 
+requestPermissionBtn.addEventListener('click', requestCameraPermission);
 startBtn.addEventListener('click', startDetection);
 stopBtn.addEventListener('click', stopDetection);
 cameraSelect.addEventListener('change', async () => {
