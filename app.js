@@ -23,45 +23,13 @@ async function loadModels() {
         status.textContent = '正在加载模型...';
         console.log('开始加载face-api.js...');
         
-        const cdnUrls = [
-            'https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js',
-            'https://unpkg.com/face-api.js@0.22.2/dist/face-api.min.js',
-            'https://cdnjs.cloudflare.com/ajax/libs/face-api.js/0.22.2/face-api.min.js'
-        ];
+        const script = document.createElement('script');
+        script.src = './face-api.min.js';
+        document.head.appendChild(script);
         
-        let scriptLoaded = false;
-        
-        for (const url of cdnUrls) {
-            try {
-                const script = document.createElement('script');
-                script.src = url;
-                
-                await new Promise((resolve, reject) => {
-                    script.onload = () => {
-                        scriptLoaded = true;
-                        resolve();
-                    };
-                    script.onerror = () => {
-                        console.log(`CDN加载失败: ${url}`);
-                        reject(new Error('CDN加载失败'));
-                    };
-                    document.head.appendChild(script);
-                    
-                    setTimeout(() => reject(new Error('加载超时')), 10000);
-                });
-                
-                if (scriptLoaded) {
-                    console.log(`face-api.js从 ${url} 加载完成`);
-                    break;
-                }
-            } catch (error) {
-                continue;
-            }
-        }
-        
-        if (!scriptLoaded) {
-            throw new Error('所有CDN都无法加载face-api.js');
-        }
+        await new Promise((resolve) => {
+            script.onload = resolve;
+        });
         
         console.log('face-api.js加载完成');
         console.log('开始加载tinyFaceDetector模型...');
