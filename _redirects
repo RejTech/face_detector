@@ -1,3 +1,3 @@
-# Cloudflare Pages自动为存在的文件提供服务
+# 让Cloudflare Pages自动处理静态文件
 # 只有不存在的路径才重定向到index.html
 /* /index.html 200
