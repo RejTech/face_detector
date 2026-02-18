@@ -25,7 +25,7 @@ async function loadModels() {
         console.log('开始加载face-api.js...');
         
         const script = document.createElement('script');
-        script.src = '/face-api.min.js';
+        script.src = './face-api.min.js';
         document.head.appendChild(script);
         
         await new Promise((resolve) => {
@@ -33,17 +33,42 @@ async function loadModels() {
         });
         
         console.log('face-api.js加载完成');
-        console.log('开始加载tinyFaceDetector模型...');
-        await faceapi.nets.tinyFaceDetector.loadFromUri('/models');
-        console.log('tinyFaceDetector模型加载完成');
         
-        console.log('开始加载faceLandmark68Net模型...');
-        await faceapi.nets.faceLandmark68Net.loadFromUri('/models');
-        console.log('faceLandmark68Net模型加载完成');
+        const modelUrls = [
+            './models',
+            'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model'
+        ];
         
-        console.log('开始加载faceRecognitionNet模型...');
-        await faceapi.nets.faceRecognitionNet.loadFromUri('/models');
-        console.log('faceRecognitionNet模型加载完成');
+        let modelsLoadedFrom = null;
+        
+        for (const url of modelUrls) {
+            try {
+                console.log(`尝试从 ${url} 加载模型...`);
+                status.textContent = `正在从 ${url} 加载模型...`;
+                
+                console.log('开始加载tinyFaceDetector模型...');
+                await faceapi.nets.tinyFaceDetector.loadFromUri(url);
+                console.log('tinyFaceDetector模型加载完成');
+                
+                console.log('开始加载faceLandmark68Net模型...');
+                await faceapi.nets.faceLandmark68Net.loadFromUri(url);
+                console.log('faceLandmark68Net模型加载完成');
+                
+                console.log('开始加载faceRecognitionNet模型...');
+                await faceapi.nets.faceRecognitionNet.loadFromUri(url);
+                console.log('faceRecognitionNet模型加载完成');
+                
+                modelsLoadedFrom = url;
+                break;
+            } catch (error) {
+                console.log(`从 ${url} 加载模型失败:`, error);
+                continue;
+            }
+        }
+        
+        if (!modelsLoadedFrom) {
+            throw new Error('无法从任何源加载模型');
+        }
         
         loadFacesFromStorage();
         
