@@ -25,7 +25,7 @@ async function loadModels() {
         console.log('开始加载face-api.js...');
         
         const script = document.createElement('script');
-        script.src = './face-api.min.js';
+        script.src = '/face-api.min.js';
         document.head.appendChild(script);
         
         await new Promise((resolve) => {
@@ -34,15 +34,15 @@ async function loadModels() {
         
         console.log('face-api.js加载完成');
         console.log('开始加载tinyFaceDetector模型...');
-        await faceapi.nets.tinyFaceDetector.loadFromUri('./models');
+        await faceapi.nets.tinyFaceDetector.loadFromUri('/models');
         console.log('tinyFaceDetector模型加载完成');
         
         console.log('开始加载faceLandmark68Net模型...');
-        await faceapi.nets.faceLandmark68Net.loadFromUri('./models');
+        await faceapi.nets.faceLandmark68Net.loadFromUri('/models');
         console.log('faceLandmark68Net模型加载完成');
         
         console.log('开始加载faceRecognitionNet模型...');
-        await faceapi.nets.faceRecognitionNet.loadFromUri('./models');
+        await faceapi.nets.faceRecognitionNet.loadFromUri('/models');
         console.log('faceRecognitionNet模型加载完成');
         
         loadFacesFromStorage();
