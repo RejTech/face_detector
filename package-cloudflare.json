@@ -1,0 +1,12 @@
+{
+  "name": "face-detector-web",
+  "version": "1.0.0",
+  "description": "人脸检测器 - Web版本",
+  "scripts": {
+    "dev": "npx http-server . -p 8080 -c-1",
+    "build": "echo '无需构建，这是静态网站'"
+  },
+  "keywords": ["face-detection", "face-recognition", "face-api"],
+  "author": "",
+  "license": "MIT"
+}

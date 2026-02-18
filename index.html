@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>人脸检测器</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --danger: #dc2626;
+            --danger-hover: #b91c1c;
+            --success: #16a34a;
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --bg-hover: #334155;
+            --border: #475569;
+            --text: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+        }
+        body {
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            background: var(--bg-dark);
+            color: var(--text);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        .app-header {
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border);
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-shrink: 0;
+        }
+        .app-icon {
+            width: 32px;
+            height: 32px;
+            background: var(--primary);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+        .app-title { font-size: 18px; font-weight: 600; }
+        .app-main { display: flex; flex: 1; overflow: hidden; }
+        .video-panel {
+            flex: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+        .video-wrapper {
+            flex: 1;
+            position: relative;
+            background: #000;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 2px solid var(--border);
+            display: flex;
+            align-items: stretch;
+            justify-content: stretch;
+            min-height: 300px;
+        }
+        #video {
+            width: 100%;
+            height: 100%;
+            display: block;
+            object-fit: contain;
+        }
+        #canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+        .video-placeholder { color: var(--text-muted); font-size: 16px; text-align: center; }
+        .control-bar {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 16px;
+            margin-top: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            border: 1px solid var(--border);
+        }
+        .control-group { display: flex; align-items: center; gap: 8px; }
+        .control-label { color: var(--text-secondary); font-size: 13px; }
+        select {
+            padding: 8px 12px;
+            background: var(--bg-hover);
+            color: var(--text);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        select:hover, select:focus { border-color: var(--primary); }
+        button {
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: 500;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover:not(:disabled) { background: var(--primary-hover); transform: translateY(-1px); }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-danger:hover:not(:disabled) { background: var(--danger-hover); transform: translateY(-1px); }
+        button:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
+        .status-bar {
+            background: var(--bg-card);
+            border-radius: 8px;
+            padding: 10px 16px;
+            margin-top: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border: 1px solid var(--border);
+        }
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--text-muted);
+        }
+        .status-indicator.active { background: var(--success); box-shadow: 0 0 8px var(--success); }
+        .status-text { color: var(--text-secondary); font-size: 13px; }
+        .faces-panel {
+            width: 320px;
+            background: var(--bg-card);
+            border-left: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+        .faces-header { padding: 16px; border-bottom: 1px solid var(--border); }
+        .faces-title { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+        .faces-count { font-size: 12px; color: var(--text-muted); }
+        .faces-content { flex: 1; overflow-y: auto; padding: 12px; }
+        .faces-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+        .face-item {
+            background: var(--bg-hover);
+            border-radius: 10px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+            transition: transform 0.2s, border-color 0.2s;
+        }
+        .face-item:hover { transform: translateY(-2px); border-color: var(--primary); }
+        .face-image { width: 100%; aspect-ratio: 1; object-fit: cover; background: #000; }
+        .face-info { padding: 10px; }
+        .face-name-input {
+            width: 100%;
+            padding: 6px 8px;
+            background: var(--bg-dark);
+            color: var(--text);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            font-size: 12px;
+            outline: none;
+            margin-bottom: 6px;
+            transition: border-color 0.2s;
+        }
+        .face-name-input:focus {
+            border-color: var(--primary);
+        }
+        .face-time { font-size: 11px; color: var(--text-muted); }
+        .no-faces {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-muted);
+            font-size: 14px;
+            grid-column: 1 / -1;
+        }
+        .faces-content::-webkit-scrollbar { width: 6px; }
+        .faces-content::-webkit-scrollbar-track { background: transparent; }
+        .faces-content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+        .faces-content::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+    </style>
+</head>
+<body>
+    <header class="app-header">
+        <div class="app-icon">👤</div>
+        <h1 class="app-title">人脸检测器</h1>
+    </header>
+    <main class="app-main">
+        <section class="video-panel">
+            <div class="video-wrapper">
+                <div class="video-placeholder" id="placeholder">选择摄像头并开始检测</div>
+                <video id="video" autoplay playsinline style="display: none;"></video>
+                <canvas id="canvas"></canvas>
+            </div>
+            <div class="control-bar">
+                <div class="control-group">
+                    <span class="control-label">摄像头:</span>
+                    <select id="cameraSelect">
+                        <option value="">选择摄像头</option>
+                    </select>
+                </div>
+                <div style="flex: 1;"></div>
+                <button id="startBtn" class="btn-primary"><span>▶</span> 开始检测</button>
+                <button id="stopBtn" class="btn-danger" disabled><span>⏹</span> 停止检测</button>
+            </div>
+            <div class="status-bar">
+                <div class="status-indicator" id="statusIndicator"></div>
+                <span class="status-text" id="status">准备就绪</span>
+            </div>
+        </section>
+        <aside class="faces-panel">
+            <div class="faces-header">
+                <h2 class="faces-title">识别到的人脸</h2>
+                <p class="faces-count" id="facesCount">共 0 张</p>
+            </div>
+            <div class="faces-content">
+                <div class="faces-grid" id="facesGrid">
+                    <div class="no-faces">暂无识别到的人脸</div>
+                </div>
+            </div>
+        </aside>
+    </main>
+    <script src="app.js"></script>
+</body>
+</html>

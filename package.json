@@ -1,0 +1,20 @@
+{
+  "name": "face_detector",
+  "version": "1.0.0",
+  "main": "index.html",
+  "icon": "icon.png",
+  "window": {
+    "title": "人脸检测器",
+    "icon": "icon.png",
+    "width": 800,
+    "height": 600,
+    "resizable": true,
+    "position": "center",
+    "min_width": 640,
+    "min_height": 480
+  },
+  "chromium-args": "--enable-features=MediaDevices",
+  "dependencies": {
+    "face-api.js": "^0.22.2"
+  }
+}
